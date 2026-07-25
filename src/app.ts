@@ -1,11 +1,8 @@
 import Fastify from 'fastify';
+import healthRoute from './routes/health.js';
 
 const app = Fastify({ logger: true });
 
-app.get('/', async () => {
-	return {
-		message: 'Personal Blogging API is running',
-	};
-});
+app.register(healthRoute);
 
 export default app;
