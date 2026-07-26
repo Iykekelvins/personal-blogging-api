@@ -1,13 +1,43 @@
-import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaClient, Prisma } from '../generated/prisma/client.js';
 import { CreatePostDto, UpdatePostDto } from '../types/posts.js';
 import { AppError } from '../utils/AppError.js';
 
-const getAllPosts = async (prisma: PrismaClient) => {
-	return prisma.post.findMany();
+export type PostsQuery = {
+	date?: string;
+};
+
+const getAllPosts = async (prisma: PrismaClient, filters: PostsQuery) => {
+	const where: Prisma.PostWhereInput = {
+		publishedAt: {
+			not: null,
+		},
+	};
+
+	if (filters.date) {
+		where.publishedAt = {
+			gte: new Date(filters.date),
+		};
+	}
+
+	const posts = prisma.post.findMany({
+		where,
+		orderBy: {
+			publishedAt: 'desc',
+		},
+	});
+
+	return posts;
 };
 
 const getPostById = async (prisma: PrismaClient, id: number) => {
-	const post = await prisma.post.findUnique({ where: { id } });
+	const post = await prisma.post.findUnique({
+		where: {
+			id,
+			publishedAt: {
+				not: null,
+			},
+		},
+	});
 
 	if (!post) {
 		throw new AppError('Post not found', 404);
@@ -54,6 +84,23 @@ const deletePost = async (prisma: PrismaClient, id: number) => {
 	});
 };
 
+const publishPost = async (prisma: PrismaClient, id: number) => {
+	const post = await prisma.post.findUnique({
+		where: { id },
+	});
+
+	if (!post) {
+		throw new AppError('Post not found', 404);
+	}
+
+	return prisma.post.update({
+		where: { id },
+		data: {
+			publishedAt: new Date(),
+		},
+	});
+};
+
 const authorizePostOwner = async (
 	prisma: PrismaClient,
 	postId: number,
@@ -78,5 +125,6 @@ export default {
 	createPost,
 	updatePost,
 	deletePost,
+	publishPost,
 	authorizePostOwner,
 };

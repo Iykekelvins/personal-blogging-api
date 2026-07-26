@@ -6,7 +6,10 @@
 	"scripts": {
 		"start": "node src/server.ts",
 		"dev": "tsx watch src/server.ts",
-		"seed": "tsx prisma/seed.ts"
+		"seed": "tsx prisma/seed.ts",
+		"prisma:migrate": "prisma migrate dev",
+		"prisma:generate": "prisma generate",
+		"prisma:studio": "prisma studio"
 	},
 	"keywords": [],
 	"author": "Kelvin Ochubili",
