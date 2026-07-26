@@ -23,13 +23,15 @@ const postsRoutes: FastifyPluginAsync = async (app) => {
 			schema: createPostSchema,
 		},
 		async (request, reply) => {
+			await request.jwtVerify();
+
 			const { content, title, slug } = request.body;
 
 			const newPost = await postService.createPost(app.prisma, {
 				content,
 				title,
 				slug,
-				adminId: 1,
+				adminId: request.user.id,
 			});
 
 			reply.status(201).send({
@@ -52,7 +54,11 @@ const postsRoutes: FastifyPluginAsync = async (app) => {
 		Params: IdParams;
 		Body: UpdatePostDto;
 	}>('/:id', { schema: updatePostSchema }, async (request, reply) => {
+		await request.jwtVerify();
+
 		const id = parseInt(request.params.id);
+
+		await postService.authorizePostOwner(app.prisma, id, request.user.id);
 
 		const updatedPost = await postService.updatePost(app.prisma, id, request.body);
 
@@ -62,7 +68,12 @@ const postsRoutes: FastifyPluginAsync = async (app) => {
 	app.delete<{
 		Params: IdParams;
 	}>('/:id', async (request, reply) => {
+		await request.jwtVerify();
+
 		const id = parseInt(request.params.id);
+
+		await postService.authorizePostOwner(app.prisma, id, request.user.id);
+
 		await postService.deletePost(app.prisma, id);
 
 		reply.status(204).send({
